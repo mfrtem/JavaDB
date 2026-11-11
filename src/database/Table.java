@@ -1,10 +1,12 @@
 package database;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Table {
+public class Table implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String name;
     private final List<Column> columns = new ArrayList<>();
     private final List<Row> rows = new ArrayList<>();

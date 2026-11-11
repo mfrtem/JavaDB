@@ -1,9 +1,11 @@
 package database;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Database {
+public class Database implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final List<Table> tables = new ArrayList<>();
 
     public void addTable(Table table) {

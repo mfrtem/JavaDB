@@ -1,6 +1,9 @@
 package database;
 
-public class Column {
+import java.io.Serializable;
+
+public class Column implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String name;
     private final String type;
 

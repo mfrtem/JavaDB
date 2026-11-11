@@ -1,6 +1,9 @@
 package database;
 
-public class ForeignKey {
+import java.io.Serializable;
+
+public class ForeignKey implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String columnName;
     private final String referencedTableName;
     private final String referencedColumnName;
