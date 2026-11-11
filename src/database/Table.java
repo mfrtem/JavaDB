@@ -1,5 +1,6 @@
 package database;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,6 +86,9 @@ public class Table {
         }
         if (type.equals("BOOLEAN")) {
             return value instanceof Boolean;
+        }
+        if (type.equals("DATE")) {
+            return value instanceof LocalDate;
         }
 
         return false;

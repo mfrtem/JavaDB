@@ -18,7 +18,8 @@ public class Column {
         if (!normalizedType.equals("INTEGER")
                 && !normalizedType.equals("STRING")
                 && !normalizedType.equals("REAL")
-                && !normalizedType.equals("BOOLEAN")) {
+                && !normalizedType.equals("BOOLEAN")
+                && !normalizedType.equals("DATE")) {
             throw new IllegalArgumentException("Неизвестный тип столбца: " + type);
         }
 
