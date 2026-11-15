@@ -2,13 +2,21 @@ package database;
 
 import java.io.IOException;
 import java.util.Scanner;
-
+/**
+ * консольная программа для учёта студентов и групп
+ * загружает базу из папки data, читает запросы и сохраняет изменения
+ */
 public class Main {
     private static final String DATA_FOLDER = "data";
 
     private Main() {
     }
-
+    /**
+     * запуск программы, запрос можно писать в несколько строк,
+     * он выполнится, когда строка закончится на ;
+     *
+     * @param args не используются
+     */
     public static void main(String[] args) {
         Storage storage = new Storage(DATA_FOLDER);
         Database database;
