@@ -3,6 +3,7 @@ package database;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +12,7 @@ public class Database implements Serializable {
     private final List<Table> tables = new ArrayList<>();
 
     private Map<String, Index> dbIndices = new HashMap<>();
-        
+
     public void addTable(Table table) {
         if (table == null) {
             throw new IllegalArgumentException("Таблица не может быть null");
@@ -98,6 +99,88 @@ public class Database implements Serializable {
             );
         }
 
+        checkForeignKeys(table, row);
+        table.addRow(row);
+
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName)) {
+                int colIndex = table.getColumnIndex(index.getColumnName());
+                if (colIndex >= 0) {
+                    Object cellValue = row.getValue(colIndex);
+                    index.insert(cellValue, row);
+                }
+            }
+        }
+    }
+
+    public void updateRow(String tableName, Row oldRow, Row newRow) {
+        Table table = getTable(tableName);
+
+        if (newRow == null) {
+            throw new IllegalArgumentException("Строка не может быть null");
+        }
+        if (newRow.size() != table.getColumns().size()) {
+            throw new IllegalArgumentException(
+                    "Количество значений не совпадает с количеством столбцов"
+            );
+        }
+
+        checkForeignKeys(table, newRow);
+        table.replaceRow(oldRow, newRow);
+
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName)) {
+                int colIndex = table.getColumnIndex(index.getColumnName());
+                if (colIndex >= 0) {
+                    index.remove(oldRow.getValue(colIndex), oldRow);
+                    index.insert(newRow.getValue(colIndex), newRow);
+                }
+            }
+        }
+    }
+
+    public void deleteRow(String tableName, Row row) {
+        Table table = getTable(tableName);
+        checkNotReferenced(table, row);
+        table.removeRow(row);
+
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName)) {
+                int colIndex = table.getColumnIndex(index.getColumnName());
+                if (colIndex >= 0) {
+                    index.remove(row.getValue(colIndex), row);
+                }
+            }
+        }
+    }
+
+    public void removeTable(String name) {
+        Table table = getTable(name);
+
+        for (Table other : tables) {
+            if (other == table) {
+                continue;
+            }
+            for (ForeignKey foreignKey : other.getForeignKeys()) {
+                if (foreignKey.getReferencedTableName().equals(table.getName())) {
+                    throw new IllegalArgumentException(
+                            "Нельзя удалить таблицу " + table.getName()
+                                    + ": на неё ссылается таблица " + other.getName()
+                    );
+                }
+            }
+        }
+
+        tables.remove(table);
+        Iterator<Index> iterator = dbIndices.values().iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getTableName().equals(table.getName())) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private void checkForeignKeys(Table table, Row row) {
         for (ForeignKey foreignKey : table.getForeignKeys()) {
             int sourceIndex = table.getColumnIndex(foreignKey.getColumnName());
 
@@ -108,6 +191,9 @@ public class Database implements Serializable {
             );
 
             Object foreignValue = row.getValue(sourceIndex);
+            if (foreignValue == null) {
+                continue;
+            }
             boolean referenceFound = false;
 
             for (Row referencedRow : referencedTable.getRows()) {
@@ -124,15 +210,26 @@ public class Database implements Serializable {
                 );
             }
         }
+    }
 
-        table.addRow(row);
+    private void checkNotReferenced(Table table, Row row) {
+        for (Table other : tables) {
+            for (ForeignKey foreignKey : other.getForeignKeys()) {
+                if (!foreignKey.getReferencedTableName().equals(table.getName())) {
+                    continue;
+                }
+                int referencedIndex =
+                        table.getColumnIndex(foreignKey.getReferencedColumnName());
+                int sourceIndex = other.getColumnIndex(foreignKey.getColumnName());
+                Object value = row.getValue(referencedIndex);
 
-        for (Index index : dbIndices.values()) {
-            if (index.getTableName().equals(tableName)) {
-                int colIndex = table.getColumnIndex(index.getColumnName());
-                if (colIndex >= 0) {
-                    Object cellValue = row.getValue(colIndex);
-                    index.insert(cellValue, row);
+                for (Row otherRow : other.getRows()) {
+                    if (value.equals(otherRow.getValue(sourceIndex))) {
+                        throw new IllegalArgumentException(
+                                "Нельзя удалить запись: на неё ссылается таблица "
+                                        + other.getName()
+                        );
+                    }
                 }
             }
         }
@@ -178,5 +275,4 @@ public class Database implements Serializable {
         }
         return null;
     }
-
 }
