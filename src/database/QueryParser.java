@@ -6,16 +6,33 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * разбирает и выполняет запросы: SELECT, INSERT, UPDATE, DELETE,
+ * CREATE TABLE, DROP TABLE, CREATE INDEX, SHOW TABLES и DESCRIBE
+ * если INSERT, UPDATE или DELETE падает на середине, сделанные изменения отменяются
+ */
 public class QueryParser {
     private final Database database;
     private List<Token> tokens;
     private int position;
     private String lastSearch = "";
 
+    /**
+     * создаёт обработчик запросов
+     *
+     * @param database база, с которой работаем
+     */
     public QueryParser(Database database) {
         this.database = database;
     }
 
+    /**
+     * выполняет один запрос
+     *
+     * @param query текст запроса
+     * @return результат запроса
+     * @throws SqlException если в запросе ошибка или его нельзя выполнить
+     */
     public QueryResult execute(String query) throws SqlException {
         tokens = Tokenizer.tokenize(query);
         position = 0;
