@@ -2,11 +2,16 @@ package database;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class Database implements Serializable {
     private static final long serialVersionUID = 1L;
     private final List<Table> tables = new ArrayList<>();
+
+    private Map<String, Index> dbIndices = new HashMap<>();
 
     public void addTable(Table table) {
         if (table == null) {
@@ -96,6 +101,16 @@ public class Database implements Serializable {
 
         checkForeignKeys(table, row);
         table.addRow(row);
+
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName)) {
+                int colIndex = table.getColumnIndex(index.getColumnName());
+                if (colIndex >= 0) {
+                    Object cellValue = row.getValue(colIndex);
+                    index.insert(cellValue, row);
+                }
+            }
+        }
     }
 
     public void updateRow(String tableName, Row oldRow, Row newRow) {
@@ -112,12 +127,31 @@ public class Database implements Serializable {
 
         checkForeignKeys(table, newRow);
         table.replaceRow(oldRow, newRow);
+
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName)) {
+                int colIndex = table.getColumnIndex(index.getColumnName());
+                if (colIndex >= 0) {
+                    index.remove(oldRow.getValue(colIndex), oldRow);
+                    index.insert(newRow.getValue(colIndex), newRow);
+                }
+            }
+        }
     }
 
     public void deleteRow(String tableName, Row row) {
         Table table = getTable(tableName);
         checkNotReferenced(table, row);
         table.removeRow(row);
+
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName)) {
+                int colIndex = table.getColumnIndex(index.getColumnName());
+                if (colIndex >= 0) {
+                    index.remove(row.getValue(colIndex), row);
+                }
+            }
+        }
     }
 
     public void removeTable(String name) {
@@ -138,6 +172,12 @@ public class Database implements Serializable {
         }
 
         tables.remove(table);
+        Iterator<Index> iterator = dbIndices.values().iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getTableName().equals(table.getName())) {
+                iterator.remove();
+            }
+        }
     }
 
     private void checkForeignKeys(Table table, Row row) {
@@ -197,5 +237,42 @@ public class Database implements Serializable {
 
     public List<Table> getTables() {
         return new ArrayList<>(tables);
+    }
+
+
+    /**
+     * Создает новый индекс по таблице и столбцу, наполняя его уже существующими данными.
+     */
+    public void createIndex(String indexName, String tableName, String columnName) {
+        Table targetTable = getTable(tableName);
+        
+        // Узнаем числовой индекс столбца по его имени
+        int colIndex = targetTable.getColumnIndex(columnName);
+        if (colIndex < 0) {
+            throw new IllegalArgumentException("Столбец не найден в таблице: " + columnName);
+        }
+
+        Index newIndex = new Index(indexName, tableName, columnName);
+        
+        // Наполняем индекс данными, используя числовой индекс ячейки в строке
+        for (Row row : targetTable.getRows()) {
+            Object cellValue = row.getValue(colIndex);
+            newIndex.insert(cellValue, row);
+        }
+        
+        dbIndices.put(indexName, newIndex);
+    }
+
+    /**
+     * Возвращает индекс по имени таблицы и столбца.
+     * Возвращает null, если подходящего индекса нет.
+     */
+    public Index getIndex(String tableName, String columnName) {
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName) && index.getColumnName().equals(columnName)) {
+                return index;
+            }
+        }
+        return null;
     }
 }
