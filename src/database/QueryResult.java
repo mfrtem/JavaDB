@@ -4,12 +4,22 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * результат запроса: таблица для SELECT или сообщение для остальных команд
+ */
 public class QueryResult {
     private final List<String> headers;
     private final List<List<Object>> rows;
     private final String message;
     private final boolean changed;
 
+    /**
+     * создаёт результат в виде таблицы
+     *
+     * @param headers названия столбцов
+     * @param rows    строки
+     * @param message сообщение под таблицей или null
+     */
     public QueryResult(List<String> headers, List<List<Object>> rows, String message) {
         this.headers = headers;
         this.rows = rows;
@@ -17,6 +27,12 @@ public class QueryResult {
         this.changed = false;
     }
 
+    /**
+     * создаёт результат в виде сообщения, например "Добавлено записей: 2"
+     *
+     * @param message сообщение
+     * @param changed true, если запрос что-то изменил в базе
+     */
     public QueryResult(String message, boolean changed) {
         this.headers = null;
         this.rows = new ArrayList<>();
@@ -24,14 +40,30 @@ public class QueryResult {
         this.changed = changed;
     }
 
+    /**
+     * проверяет, изменил ли запрос базу (если да, базу нужно сохранить)
+     *
+     * @return true, если база изменилась
+     */
     public boolean isChanged() {
         return changed;
     }
 
+    /**
+     * возвращает количество строк в результате
+     *
+     * @return количество строк
+     */
     public int getRowCount() {
         return rows.size();
     }
 
+    /**
+     * переводит значение в текст для вывода, пустое значение выводится как NULL
+     *
+     * @param value значение
+     * @return текст
+     */
     public static String format(Object value) {
         if (value == null) {
             return "NULL";
@@ -42,6 +74,11 @@ public class QueryResult {
         return value.toString();
     }
 
+    /**
+     * выводит результат, таблица рисуется с рамкой, столбцы выровнены
+     *
+     * @return текст результата
+     */
     @Override
     public String toString() {
         if (headers == null) {
