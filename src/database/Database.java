@@ -2,12 +2,16 @@ package database;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Database implements Serializable {
     private static final long serialVersionUID = 1L;
     private final List<Table> tables = new ArrayList<>();
 
+    private Map<String, Index> dbIndices = new HashMap<>();
+        
     public void addTable(Table table) {
         if (table == null) {
             throw new IllegalArgumentException("Таблица не может быть null");
@@ -122,9 +126,57 @@ public class Database implements Serializable {
         }
 
         table.addRow(row);
+
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName)) {
+                int colIndex = table.getColumnIndex(index.getColumnName());
+                if (colIndex >= 0) {
+                    Object cellValue = row.getValue(colIndex);
+                    index.insert(cellValue, row);
+                }
+            }
+        }
     }
 
     public List<Table> getTables() {
         return new ArrayList<>(tables);
     }
+
+
+    /**
+     * Создает новый индекс по таблице и столбцу, наполняя его уже существующими данными.
+     */
+    public void createIndex(String indexName, String tableName, String columnName) {
+        Table targetTable = getTable(tableName);
+        
+        // Узнаем числовой индекс столбца по его имени
+        int colIndex = targetTable.getColumnIndex(columnName);
+        if (colIndex < 0) {
+            throw new IllegalArgumentException("Столбец не найден в таблице: " + columnName);
+        }
+
+        Index newIndex = new Index(indexName, tableName, columnName);
+        
+        // Наполняем индекс данными, используя числовой индекс ячейки в строке
+        for (Row row : targetTable.getRows()) {
+            Object cellValue = row.getValue(colIndex);
+            newIndex.insert(cellValue, row);
+        }
+        
+        dbIndices.put(indexName, newIndex);
+    }
+
+    /**
+     * Возвращает индекс по имени таблицы и столбца.
+     * Возвращает null, если подходящего индекса нет.
+     */
+    public Index getIndex(String tableName, String columnName) {
+        for (Index index : dbIndices.values()) {
+            if (index.getTableName().equals(tableName) && index.getColumnName().equals(columnName)) {
+                return index;
+            }
+        }
+        return null;
+    }
+
 }
