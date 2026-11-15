@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * хранит столбцы и записи таблицы и проверяет ограничения
+ */
 public class Table implements Serializable {
     private static final long serialVersionUID = 1L;
     private final String name;
@@ -13,6 +16,12 @@ public class Table implements Serializable {
     private final List<ForeignKey> foreignKeys = new ArrayList<>();
     private int primaryKeyIndex = -1;
 
+    /**
+     * создаёт таблицу с указанным именем
+     *
+     * @param name имя таблицы
+     * @throws IllegalArgumentException если имя пустое или равно null
+     */
     public Table(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Имя таблицы не может быть пустым");
@@ -21,6 +30,13 @@ public class Table implements Serializable {
         this.name = name.trim();
     }
 
+    /**
+     * добавляет столбец в таблицу
+     *
+     * @param column добавляемый столбец
+     * @throws IllegalArgumentException если столбец равен null или уже существует
+     * @throws IllegalStateException если в таблице уже есть строки
+     */
     public void addColumn(Column column) {
         if (column == null) {
             throw new IllegalArgumentException("Столбец не может быть null");
@@ -39,11 +55,25 @@ public class Table implements Serializable {
         columns.add(column);
     }
 
+    /**
+     * добавляет строку в таблицу после проверки значений
+     *
+     * @param row добавляемая строка
+     * @throws IllegalArgumentException если строка некорректна
+     * @throws IllegalStateException если в таблице ещё нет столбцов
+     */
     void addRow(Row row) {
         checkRow(row, null);
         rows.add(row);
     }
 
+    /**
+     * заменяет строку после проверки новых значений
+     *
+     * @param oldRow заменяемая строка
+     * @param newRow новая строка
+     * @throws IllegalArgumentException если старая строка не найдена или новая некорректна
+     */
     void replaceRow(Row oldRow, Row newRow) {
         int position = rows.indexOf(oldRow);
         if (position < 0) {
@@ -57,6 +87,12 @@ public class Table implements Serializable {
         rows.set(position, newRow);
     }
 
+    /**
+     * удаляет строку из таблицы
+     *
+     * @param row удаляемая строка
+     * @throws IllegalArgumentException если строка не найдена
+     */
     void removeRow(Row row) {
         if (!rows.remove(row)) {
             throw new IllegalArgumentException("Строка не найдена в таблице " + name);
@@ -128,6 +164,13 @@ public class Table implements Serializable {
         return false;
     }
 
+    /**
+     * задаёт первичный ключ таблицы
+     *
+     * @param columnName имя столбца первичного ключа
+     * @throws IllegalArgumentException если имя пустое или столбец не найден
+     * @throws IllegalStateException если строки уже добавлены или ключ уже задан
+     */
     public void setPrimaryKey(String columnName) {
         if (columnName == null || columnName.trim().isEmpty()) {
             throw new IllegalArgumentException("Имя столбца не может быть пустым");
@@ -149,6 +192,13 @@ public class Table implements Serializable {
         throw new IllegalArgumentException("Столбец не найден: " + columnName);
     }
 
+    /**
+     * добавляет внешний ключ в таблицу
+     *
+     * @param foreignKey добавляемый внешний ключ
+     * @throws IllegalArgumentException если ключ равен null или его столбец не найден
+     * @throws IllegalStateException если в таблице уже есть строки
+     */
     void addForeignKey(ForeignKey foreignKey) {
         if (foreignKey == null) {
             throw new IllegalArgumentException("Внешний ключ не может быть null");
@@ -176,10 +226,21 @@ public class Table implements Serializable {
         foreignKeys.add(foreignKey);
     }
 
+    /**
+     * возвращает список внешних ключей
+     *
+     * @return копия списка внешних ключей
+     */
     public List<ForeignKey> getForeignKeys() {
         return new ArrayList<>(foreignKeys);
     }
 
+    /**
+     * находит индекс столбца по имени
+     *
+     * @param columnName имя столбца
+     * @return индекс столбца или -1, если он не найден
+     */
     public int getColumnIndex(String columnName) {
         for (int i = 0; i < columns.size(); i++) {
             if (columns.get(i).getName().equals(columnName)) {
@@ -190,19 +251,40 @@ public class Table implements Serializable {
         return -1;
     }
 
+    /**
+     * проверяет, является ли столбец первичным ключом
+     *
+     * @param columnName имя столбца
+     * @return true, если столбец является первичным ключом
+     */
     public boolean isPrimaryKeyColumn(String columnName) {
         return primaryKeyIndex >= 0
                 && columns.get(primaryKeyIndex).getName().equals(columnName);
     }
 
+    /**
+     * возвращает имя таблицы
+     *
+     * @return имя таблицы
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * возвращает список столбцов таблицы
+     *
+     * @return копия списка столбцов
+     */
     public List<Column> getColumns() {
         return new ArrayList<>(columns);
     }
 
+    /**
+     * возвращает строки таблицы
+     *
+     * @return копия списка строк
+     */
     public List<Row> getRows() {
         return new ArrayList<>(rows);
     }

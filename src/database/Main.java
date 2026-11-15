@@ -41,6 +41,7 @@ public class Main {
             if (!sc.hasNextLine()) {
                 break;
             }
+            
             String line = sc.nextLine().trim();
             if (query.length() == 0) {
                 String command = line.endsWith(";") ? line.substring(0, line.length() - 1).trim() : line;
@@ -61,6 +62,8 @@ public class Main {
                 query.setLength(0);
             }
         }
+
+        sc.close();
         System.out.println("До свидания!");
     }
 

@@ -7,12 +7,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * управляет таблицами, записями, связями и индексами базы данных
+ */
 public class Database implements Serializable {
     private static final long serialVersionUID = 1L;
     private final List<Table> tables = new ArrayList<>();
 
     private Map<String, Index> dbIndices = new HashMap<>();
 
+    /**
+     * добавляет таблицу в базу данных
+     *
+     * @param table добавляемая таблица
+     * @throws IllegalArgumentException если таблица равна null или уже существует
+     */
     public void addTable(Table table) {
         if (table == null) {
             throw new IllegalArgumentException("Таблица не может быть null");
@@ -27,6 +36,13 @@ public class Database implements Serializable {
         tables.add(table);
     }
 
+    /**
+     * находит таблицу по имени
+     *
+     * @param name имя таблицы
+     * @return найденная таблица
+     * @throws IllegalArgumentException если имя пустое или таблица не найдена
+     */
     public Table getTable(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Имя таблицы не может быть пустым");
@@ -41,6 +57,14 @@ public class Database implements Serializable {
         throw new IllegalArgumentException("Таблица не найдена: " + name);
     }
 
+    /**
+     * добавляет связь с первичным ключом другой таблицы
+     *
+     * @param tableName имя текущей таблицы
+     * @param foreignKey добавляемый внешний ключ
+     * @throws IllegalArgumentException если таблица, ключ или столбец некорректны
+     * @throws IllegalStateException если в таблице уже есть строки
+     */
     public void addForeignKey(String tableName, ForeignKey foreignKey) {
         if (foreignKey == null) {
             throw new IllegalArgumentException("Внешний ключ не может быть null");
@@ -87,6 +111,14 @@ public class Database implements Serializable {
         sourceTable.addForeignKey(foreignKey);
     }
 
+    /**
+     * добавляет строку в таблицу
+     *
+     * @param tableName имя таблицы
+     * @param row добавляемая строка
+     * @throws IllegalArgumentException если строка или её значения некорректны
+     * @throws IllegalStateException если в таблице нет столбцов
+     */
     public void addRow(String tableName, Row row) {
         Table table = getTable(tableName);
 
@@ -113,6 +145,14 @@ public class Database implements Serializable {
         }
     }
 
+    /**
+     * заменяет строку в таблице
+     *
+     * @param tableName имя таблицы
+     * @param oldRow заменяемая строка
+     * @param newRow новая строка
+     * @throws IllegalArgumentException если строка или её значения некорректны
+     */
     public void updateRow(String tableName, Row oldRow, Row newRow) {
         Table table = getTable(tableName);
 
@@ -139,6 +179,13 @@ public class Database implements Serializable {
         }
     }
 
+    /**
+     * удаляет строку из таблицы
+     *
+     * @param tableName имя таблицы
+     * @param row удаляемая строка
+     * @throws IllegalArgumentException если строка не найдена или на неё есть ссылка
+     */
     public void deleteRow(String tableName, Row row) {
         Table table = getTable(tableName);
         checkNotReferenced(table, row);
@@ -154,6 +201,12 @@ public class Database implements Serializable {
         }
     }
 
+    /**
+     * удаляет таблицу из базы данных
+     *
+     * @param name имя таблицы
+     * @throws IllegalArgumentException если таблица не найдена или на неё есть ссылка
+     */
     public void removeTable(String name) {
         Table table = getTable(name);
 
@@ -235,13 +288,22 @@ public class Database implements Serializable {
         }
     }
 
+    /**
+     * возвращает список таблиц базы данных
+     *
+     * @return копия списка таблиц
+     */
     public List<Table> getTables() {
         return new ArrayList<>(tables);
     }
 
-
     /**
-     * Создает новый индекс по таблице и столбцу, наполняя его уже существующими данными.
+     * создаёт индекс по таблице и столбцу и добавляет в него существующие строки
+     *
+     * @param indexName имя индекса
+     * @param tableName имя таблицы
+     * @param columnName имя столбца
+     * @throws IllegalArgumentException если таблица или столбец не найдены
      */
     public void createIndex(String indexName, String tableName, String columnName) {
         Table targetTable = getTable(tableName);
@@ -264,8 +326,11 @@ public class Database implements Serializable {
     }
 
     /**
-     * Возвращает индекс по имени таблицы и столбца.
-     * Возвращает null, если подходящего индекса нет.
+     * находит индекс по имени таблицы и столбца
+     *
+     * @param tableName имя таблицы
+     * @param columnName имя столбца
+     * @return найденный индекс или null, если его нет
      */
     public Index getIndex(String tableName, String columnName) {
         for (Index index : dbIndices.values()) {
