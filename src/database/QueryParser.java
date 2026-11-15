@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 /**
  * разбирает и выполняет запросы: SELECT, INSERT, UPDATE, DELETE,
  * CREATE TABLE, DROP TABLE, CREATE INDEX, SHOW TABLES и DESCRIBE
@@ -16,7 +15,6 @@ public class QueryParser {
     private List<Token> tokens;
     private int position;
     private String lastSearch = "";
-
     /**
      * создаёт обработчик запросов
      *
