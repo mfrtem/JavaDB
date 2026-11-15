@@ -3,12 +3,24 @@ package database;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * делит текст запроса на части
+ * например, SELECT name FROM students; превращается в SELECT, name, FROM, students, ;
+ */
 public class Tokenizer {
     private static final String SYMBOLS = "(),;*=<>!";
 
     private Tokenizer() {
     }
 
+    /**
+     * делит запрос на части, пробелы пропускаются, строки в кавычках
+     * остаются одной частью, а знаки вроде &gt;= и != не разрываются
+     *
+     * @param query текст запроса
+     * @return список частей запроса
+     * @throws SqlException если не закрыта кавычка
+     */
     public static List<Token> tokenize(String query) throws SqlException {
         List<Token> tokens = new ArrayList<>();
         int i = 0;
