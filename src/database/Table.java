@@ -40,6 +40,30 @@ public class Table implements Serializable {
     }
 
     void addRow(Row row) {
+        checkRow(row, null);
+        rows.add(row);
+    }
+
+    void replaceRow(Row oldRow, Row newRow) {
+        int position = rows.indexOf(oldRow);
+        if (position < 0) {
+            throw new IllegalArgumentException("Строка не найдена в таблице " + name);
+        }
+        checkRow(newRow, oldRow);
+        if (primaryKeyIndex >= 0
+                && !oldRow.getValue(primaryKeyIndex).equals(newRow.getValue(primaryKeyIndex))) {
+            throw new IllegalArgumentException("Первичный ключ изменять нельзя");
+        }
+        rows.set(position, newRow);
+    }
+
+    void removeRow(Row row) {
+        if (!rows.remove(row)) {
+            throw new IllegalArgumentException("Строка не найдена в таблице " + name);
+        }
+    }
+
+    private void checkRow(Row row, Row ignoredRow) {
         if (row == null) {
             throw new IllegalArgumentException("Строка не может быть null");
         }
@@ -56,6 +80,15 @@ public class Table implements Serializable {
             Column column = columns.get(i);
             Object value = row.getValue(i);
 
+            if (value == null) {
+                if (i == primaryKeyIndex) {
+                    throw new IllegalArgumentException(
+                            "Первичный ключ не может быть пустым: " + column.getName()
+                    );
+                }
+                continue;
+            }
+
             if (!isValueTypeValid(column.getType(), value)) {
                 throw new IllegalArgumentException(
                         "Неверный тип значения для столбца: " + column.getName()
@@ -67,13 +100,12 @@ public class Table implements Serializable {
             Object newPrimaryKey = row.getValue(primaryKeyIndex);
 
             for (Row existingRow : rows) {
-                if (existingRow.getValue(primaryKeyIndex).equals(newPrimaryKey)) {
+                if (existingRow != ignoredRow
+                        && existingRow.getValue(primaryKeyIndex).equals(newPrimaryKey)) {
                     throw new IllegalArgumentException("Первичный ключ уже существует");
                 }
             }
         }
-
-        rows.add(row);
     }
 
     private boolean isValueTypeValid(String type, Object value) {
